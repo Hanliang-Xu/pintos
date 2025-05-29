@@ -1,0 +1,113 @@
+			+-------------------------+
+			|        CS 318           |
+			| PROJECT 0: Getting Real |
+			|     DESIGN DOCUMENT     |
+			+-------------------------+
+				   
+---- AUTHOR ----
+
+>> Fill in your name and email address.
+
+Hanliang Xu <hxu110@jh.edu>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, or extra credit, please give them here.
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+			     Booting Pintos
+			     ==============
+
+---- QUESTIONS ---- 
+>> Put the screenshots of Pintos running in src/p0.
+>> A1: Is there any particular issue that you would like us to know?
+
+			     Debugging
+			     =========
+
+---- QUESTIONS: BIOS ---- 
+>> B1: What is the first instruction that gets executed?
+ljmp   $0x3630,$0xf000e05b
+
+>> B2: At which physical address is this instruction located?
+0xffff0
+
+>> B3: Can you guess why the first instruction is like this?
+The reset vector at 0xffff0 is just 16 bytes before the end of the 1MB real-mode
+memory space. So the instruction executes a long jump to relocate execution to
+a lower physical address within the BIOS ROM.
+
+>> B4: What are the next three instructions?
+cmpw   $0x28,%cs:(%esi)
+jne    0xd241d0ad
+xor    %edx,%edx
+
+---- QUESTIONS: BOOTLOADER ---- 
+>> B5: How does the bootloader read disk sectors? In particular, what BIOS interrupt
+is used?
+The bootloader reads disk sectors through the interrupt $0x13, with function code AH = 0x42.
+This interrupt invokes the extended read function, which uses logical block addressing to
+load sectors into memory from a hard disk.
+
+>> B6: How does the bootloader decides whether it successfully finds the Pintos kernel?
+The bootloader begins by reading sector 0 (The Master Boot Record) of each hard drive starting
+at drive $0x80. It then checks for a valid MBR by verifying that bytes 510-511 contain the
+signature $0xaa55. If valid, it scans the four 16-byte partition entries starting at byte
+offset 446.
+For each entry, the bootloader checks:
+ - That it is not unused
+ - That the partition type byte is 0x20, identifying a Pintos kernel partition
+ - That the bootable flag is set to 0x80
+If all checks pass, the loader jumps to load_kernel and loads the kernel from that partition
+into memory.
+
+>> B7: What happens when the bootloader could not find the Pintos kernel?
+If the bootloader fails to find a Pintos kernel partition - meaning that it doesn't find a
+partition with type 0x20 and bootable 0x80 - it reaches the no_boot_partition: label.
+There, it calls puts to output the string "\rNot found\r" to the console, and then invokes
+BIOS interrupt 0x18, which signals a boot failure and returns control to the BIOS.
+
+>> B8: At what point and how exactly does the bootloader transfer control to the Pintos kernel?
+The bootloader transfers control to the kernel right after it finishes loading all kernel sectors.
+It reads the 32-bit entry point from offset 0x18 of the loaded ELF header, constructs a 16:16
+segment:offset pointer at label start, and then performs a far jump (ljmp *start) to pass control
+to the kernel. This jump marks the exact handoff from bootloader to kernel execution.
+
+
+---- QUESTIONS: KERNEL ---- 
+>> B9: At the entry of pintos_init(), what is the value of expression 
+init_page_dir[pd_no(ptov(0))] in hexadecimal format?
+
+>> B10: When palloc_get_page() is called for the first time,
+
+>> B10.1 what does the call stack look like?
+
+>> B10.2 what is the return value in hexadecimal format?
+
+>> B10.3 what is the value of expression init_page_dir[pd_no(ptov(0))] in hexadecimal format?
+
+>> B11: When palloc_get_page() is called for the third time,
+
+>> B11.1 what does the call stack look like?
+
+>> B11.2 what is the return value in hexadecimal format?
+
+>> B11.3 what is the value of expression init_page_dir[pd_no(ptov(0))] in hexadecimal format?
+
+			     Kernel Monitor
+			     ==============
+
+---- DATA STRUCTURES ----
+
+>> C1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+---- ALGORITHMS ----
+>> C2: Explain how you read and write to the console for the kernel monitor.
+
+>> C3: Any additional enhancement you implement?
