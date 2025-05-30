@@ -63,6 +63,7 @@ static void paging_init (void);
 static char **read_command_line (void);
 static char **parse_options (char **argv);
 static void run_actions (char **argv);
+static void run_interactive_shell (void);
 static void usage (void);
 
 #ifdef FILESYS
@@ -133,7 +134,7 @@ pintos_init (void)
     /* Run actions specified on kernel command line. */
     run_actions (argv);
   } else {
-    // TODO: no command line passed to kernel. Run interactively 
+    run_interactive_shell();
   }
 
   /* Finish up. */
@@ -345,6 +346,36 @@ run_actions (char **argv)
       argv += a->argc;
     }
   
+}
+
+/* Run a shell interactively for users to provide arguments */
+static void
+run_interactive_shell (void) {
+  char buffer[128];
+  size_t index = 0;
+  const size_t limit = sizeof (buffer) - 1;
+
+  for (;;)
+    {
+      printf("CS318> ");
+      while (index < limit)
+        {
+          uint8_t c = input_getc();
+          if (c == '\n' || c == '\r')
+            {
+              break;
+            }
+          printf("%c", c);
+          buffer[index++] = (char) c;
+        }
+
+      buffer[index] = '\0';
+      if (strcmp(buffer, "exit") == 0 )  break;
+      else if (strcmp(buffer, "whoami") == 0)  printf("\nHanliang Xu\n");
+      else  printf("\ninvalid command\n");
+
+      index = 0;
+    }
 }
 
 /* Prints a kernel command line help message and powers off the
